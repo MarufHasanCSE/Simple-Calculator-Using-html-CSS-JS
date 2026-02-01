@@ -4,19 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
+    <title>Pro Calculator</title>
     <link rel="stylesheet" href="calculator.css">
 </head>
 
 <body>
-    <h2 style="text-align: center;">Challenge 1: Re-create calculator layout and its functionality.</h2>
-    <div class="body">
+    <div class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+        <span class="theme-icon">🌙</span>
+    </div>
 
-        <div class="calculator">
+    <h2 style="text-align: center;">Challenge 1: Re-create calculator layout and its functionality.</h2>
+    
+    <div class="body">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+
+        <div class="calculator" id="calculator">
+            <div class="calculator-header">
+                <span class="calc-title">PRO CALC</span>
+                <span class="calc-version">v2.0</span>
+            </div>
+
             <div class="display-container">
+                <div class="history" id="history"></div>
                 <div class="expression" id="expression"></div>
                 <div class="result" id="result">0</div>
             </div>
+
             <div class="buttons">
                 <button class="operator" onclick="addOperator('+')">+</button>
                 <button class="operator" onclick="addOperator('-')">-</button>
@@ -40,8 +54,15 @@
                 <button class="number" onclick="addNumber('.')">.</button>
                 <button class="clear" onclick="clearAll()">C</button>
             </div>
+
+            <div class="calc-footer">
+                <span class="stat" id="stat-calc">Calculations: 0</span>
+            </div>
         </div>
     </div>
+
+    <div class="particles" id="particles"></div>
+
     <script src="calculator.js"></script>
 </body>
 
