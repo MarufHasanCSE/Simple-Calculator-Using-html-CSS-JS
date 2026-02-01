@@ -9,8 +9,61 @@ let lastInputWasOperator = false
 const resultDisplay = document.getElementById("result")
 const expressionDisplay = document.getElementById("expression")
 
+// Audio context for sound effects
+const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+
+// Function to play a beep sound
+function playBeep(frequency = 800, duration = 100) {
+  try {
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+    
+    oscillator.connect(gainNode)
+    gainNode.connect(audioContext.destination)
+    
+    oscillator.frequency.value = frequency
+    oscillator.type = 'sine'
+    
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000)
+    
+    oscillator.start(audioContext.currentTime)
+    oscillator.stop(audioContext.currentTime + duration / 1000)
+  } catch (e) {
+    // Silent fail if audio not available
+  }
+}
+
+// Function to add ripple effect on button click
+function addRipple(event) {
+  const button = event.currentTarget
+  const ripple = document.createElement('span')
+  const rect = button.getBoundingClientRect()
+  const size = Math.max(rect.width, rect.height)
+  const x = event.clientX - rect.left - size / 2
+  const y = event.clientY - rect.top - size / 2
+  
+  ripple.style.width = ripple.style.height = size + 'px'
+  ripple.style.left = x + 'px'
+  ripple.style.top = y + 'px'
+  ripple.classList.add('ripple')
+  
+  button.appendChild(ripple)
+  
+  setTimeout(() => ripple.remove(), 600)
+}
+
+// Add click event listeners to all buttons for ripple effect
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', addRipple)
+  })
+})
+
 // Add a number to the current input
 function addNumber(num) {
+  playBeep(600, 50)
+  
   // Handle decimal point
   if (num === "." && currentNumber.includes(".")) {
     return
@@ -26,12 +79,18 @@ function addNumber(num) {
   // Reset operator flag
   lastInputWasOperator = false
 
-  // Update display
+  // Update display with animation
   resultDisplay.textContent = currentNumber
+  resultDisplay.style.animation = 'none'
+  setTimeout(() => {
+    resultDisplay.style.animation = 'pop 0.2s ease-out'
+  }, 10)
 }
 
 // Add an operator to the expression
 function addOperator(op) {
+  playBeep(1000, 80)
+  
   // Don't add operator if none entered yet
   if (expression === "" && currentNumber === "0") {
     return
@@ -49,13 +108,19 @@ function addOperator(op) {
   // Set operator flag
   lastInputWasOperator = true
 
-  // Update displays
+  // Update displays with animation
   expressionDisplay.textContent = expression
+  expressionDisplay.style.animation = 'none'
+  setTimeout(() => {
+    expressionDisplay.style.animation = 'slideUp 0.3s ease-out'
+  }, 10)
   resultDisplay.textContent = currentNumber
 }
 
 // Calculate the result following BODMAS rules
 function calculate() {
+  playBeep(1200, 150)
+  
   // Don't calculate if no expression
   if (expression === "") {
     return
@@ -116,15 +181,20 @@ function calculate() {
       }
     }
 
-    // Update the result display
+    // Update the result display with animation
     currentNumber = result.toString()
     resultDisplay.textContent = currentNumber
+    resultDisplay.style.animation = 'none'
+    setTimeout(() => {
+      resultDisplay.style.animation = 'pop 0.4s ease-out'
+    }, 10)
 
     // Reset expression for next calculation
     expression = ""
     lastInputWasOperator = false
   } catch (error) {
     // Handle errors
+    playBeep(300, 200)
     expressionDisplay.textContent = "Error"
     resultDisplay.textContent = "0"
     currentNumber = "0"
@@ -135,6 +205,7 @@ function calculate() {
 
 // Clear all inputs and reset calculator
 function clearAll() {
+  playBeep(400, 80)
   currentNumber = "0"
   expression = ""
   lastInputWasOperator = false
