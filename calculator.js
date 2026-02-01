@@ -4,16 +4,23 @@
 let currentNumber = "0"
 let expression = ""
 let lastInputWasOperator = false
+let calculationCount = 0
+let darkMode = false
+let lastResult = ""
 
 // Display elements
 const resultDisplay = document.getElementById("result")
 const expressionDisplay = document.getElementById("expression")
+const historyDisplay = document.getElementById("history")
+const statDisplay = document.getElementById("stat-calc")
+const bodyEl = document.body
+const themeToggle = document.querySelector('.theme-toggle')
 
 // Audio context for sound effects
 const audioContext = new (window.AudioContext || window.webkitAudioContext)()
 
-// Function to play a beep sound
-function playBeep(frequency = 800, duration = 100) {
+// Function to play a beep sound with different tones
+function playBeep(frequency = 800, duration = 100, type = 'sine') {
   try {
     const oscillator = audioContext.createOscillator()
     const gainNode = audioContext.createGain()
@@ -22,15 +29,69 @@ function playBeep(frequency = 800, duration = 100) {
     gainNode.connect(audioContext.destination)
     
     oscillator.frequency.value = frequency
-    oscillator.type = 'sine'
+    oscillator.type = type
     
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime)
+    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime)
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000)
     
     oscillator.start(audioContext.currentTime)
     oscillator.stop(audioContext.currentTime + duration / 1000)
   } catch (e) {
     // Silent fail if audio not available
+  }
+}
+
+// Create particle effect
+function createParticle(x, y, color = '#667eea') {
+  const particle = document.createElement('div')
+  particle.classList.add('particle')
+  particle.style.left = x + 'px'
+  particle.style.top = y + 'px'
+  particle.style.width = '8px'
+  particle.style.height = '8px'
+  particle.style.backgroundColor = color
+  particle.style.borderRadius = '50%'
+  particle.style.boxShadow = `0 0 10px ${color}`
+  
+  const angle = Math.random() * Math.PI * 2
+  const distance = 50 + Math.random() * 100
+  const tx = Math.cos(angle) * distance
+  const ty = Math.sin(angle) * distance
+  
+  particle.style.setProperty('--tx', tx + 'px')
+  particle.style.setProperty('--ty', ty + 'px')
+  particle.style.animation = `particle-float ${0.6 + Math.random() * 0.4}s ease-out forwards`
+  
+  document.getElementById('particles').appendChild(particle)
+  
+  setTimeout(() => particle.remove(), 1000)
+}
+
+// Burst particle effect
+function createParticleBurst(x, y, count = 8, color = '#00ff88') {
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => createParticle(x, y, color), i * 30)
+  }
+}
+
+// Toggle dark mode
+function toggleTheme() {
+  darkMode = !darkMode
+  bodyEl.classList.toggle('dark-mode')
+  const icon = themeToggle.querySelector('.theme-icon')
+  icon.textContent = darkMode ? '☀️' : '🌙'
+  playBeep(700, 100)
+  localStorage.setItem('calculatorTheme', darkMode ? 'dark' : 'light')
+}
+
+// Load theme preference
+function loadTheme() {
+  const saved = localStorage.getItem('calculatorTheme')
+  if (saved === 'dark') {
+    darkMode = true
+    bodyEl.classList.add('dark-mode')
+    const icon = themeToggle.querySelector('.theme-icon')
+    icon.textContent = '☀️'
   }
 }
 
@@ -55,10 +116,40 @@ function addRipple(event) {
 
 // Add click event listeners to all buttons for ripple effect
 document.addEventListener('DOMContentLoaded', () => {
+  loadTheme()
+  themeToggle.addEventListener('click', toggleTheme)
+  
   document.querySelectorAll('button').forEach(button => {
     button.addEventListener('click', addRipple)
   })
+  
+  // Keyboard support
+  document.addEventListener('keydown', handleKeyPress)
 })
+
+// Handle keyboard input
+function handleKeyPress(event) {
+  const key = event.key
+  
+  if (key >= '0' && key <= '9') {
+    addNumber(key)
+  } else if (key === '.') {
+    addNumber('.')
+  } else if (key === '+' || key === '-') {
+    addOperator(key)
+  } else if (key === '*') {
+    addOperator('*')
+  } else if (key === '/') {
+    event.preventDefault()
+    addOperator('/')
+  } else if (key === 'Enter' || key === '=') {
+    event.preventDefault()
+    calculate()
+  } else if (key === 'Backspace' || key === 'c' || key === 'C') {
+    event.preventDefault()
+    clearAll()
+  }
+}
 
 // Add a number to the current input
 function addNumber(num) {
@@ -85,6 +176,12 @@ function addNumber(num) {
   setTimeout(() => {
     resultDisplay.style.animation = 'pop 0.2s ease-out'
   }, 10)
+  
+  // Create particles on larger number input
+  if (currentNumber.length % 5 === 0) {
+    const rect = resultDisplay.getBoundingClientRect()
+    createParticle(rect.left + rect.width / 2, rect.top + rect.height / 2, '#667eea')
+  }
 }
 
 // Add an operator to the expression
@@ -182,12 +279,25 @@ function calculate() {
     }
 
     // Update the result display with animation
+    lastResult = currentNumber
     currentNumber = result.toString()
     resultDisplay.textContent = currentNumber
     resultDisplay.style.animation = 'none'
     setTimeout(() => {
       resultDisplay.style.animation = 'pop 0.4s ease-out'
     }, 10)
+
+    // Update history
+    historyDisplay.textContent = `Last: ${lastResult}`
+    historyDisplay.style.animation = 'slideUp 0.3s ease-out'
+
+    // Increment calculation count
+    calculationCount++
+    statDisplay.textContent = `Calculations: ${calculationCount}`
+
+    // Create particle burst for successful calculation
+    const rect = resultDisplay.getBoundingClientRect()
+    createParticleBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 12, '#00ff88')
 
     // Reset expression for next calculation
     expression = ""
@@ -200,6 +310,10 @@ function calculate() {
     currentNumber = "0"
     expression = ""
     lastInputWasOperator = false
+    
+    // Create red particle burst for error
+    const rect = resultDisplay.getBoundingClientRect()
+    createParticleBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 8, '#ff6b6b')
   }
 }
 
@@ -211,6 +325,7 @@ function clearAll() {
   lastInputWasOperator = false
   resultDisplay.textContent = currentNumber
   expressionDisplay.textContent = expression
+  historyDisplay.textContent = ""
 }
 
 // Helper function to get display symbol for operators
