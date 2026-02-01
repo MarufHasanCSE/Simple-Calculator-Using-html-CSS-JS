@@ -1,3 +1,5 @@
+// calculator.js
+
 // Simple state variables
 let currentNumber = "0"
 let expression = ""
