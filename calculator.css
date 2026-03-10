@@ -42,10 +42,9 @@
     align-items: center;
     height: 100vh;
     position: relative;
-    z-index: 10;
+    z-index: 11;
   }
 
-  /* Theme Toggle Button */
   .theme-toggle {
     position: fixed;
     top: 20px;
